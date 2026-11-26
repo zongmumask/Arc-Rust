@@ -1,0 +1,14 @@
+# Cargo build output
+/target/
+
+# Disposable PDFium + depot_tools checkout (see docs/BUILD_AND_PDFIUM_UPDATE.md)
+/build/
+
+# Generated PDFium libs, headers, manifests and test fixtures
+/artifacts/
+
+# Editor / OS cruft
+.DS_Store
+*~
+*.swp
+*.rs.bk
