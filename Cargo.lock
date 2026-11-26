@@ -226,6 +226,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arc-pdfium-ext"
+version = "0.1.0"
+dependencies = [
+ "arc-pdfium-sys",
+ "bindgen",
+ "cc",
+]
+
+[[package]]
 name = "arc-pdfium-sys"
 version = "0.1.0"
 dependencies = [

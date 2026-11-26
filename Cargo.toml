@@ -7,6 +7,7 @@ members = [
     "crates/arc-pdf-app",
     "crates/arc-pdf-cli",
     "ffi/arc-pdfium-sys",
+    "ffi/arc-pdfium-ext",
 ]
 resolver = "2"
 exclude = ["vendor", "tools/vendor-sync"]

@@ -1,0 +1,70 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug arc-pdf-cli (build first)",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=arc-pdf-cli",
+                    "--package=arc-pdf-cli"
+                ],
+                "filter": {
+                    "name": "arc-pdf-cli",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "render",
+                "--pdf",
+                "${workspaceFolder}/artifacts/test-fixtures/smoke.pdf",
+                "--page",
+                "0",
+                "--scale",
+                "1.5",
+                "--out",
+                "/tmp/arc-pdf-debug.png"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug arc-pdf-cli (no args)",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=arc-pdf-cli",
+                    "--package=arc-pdf-cli"
+                ],
+                "filter": {
+                    "name": "arc-pdf-cli",
+                    "kind": "bin"
+                }
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug arc-pdf-app",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=arc-pdf-app",
+                    "--package=arc-pdf-app"
+                ],
+                "filter": {
+                    "name": "arc-pdf-app",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "${workspaceFolder}/artifacts/test-fixtures/smoke.pdf"
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

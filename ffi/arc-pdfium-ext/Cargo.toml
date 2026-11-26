@@ -1,0 +1,16 @@
+[package]
+name = "arc-pdfium-ext"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+arc-pdfium-sys = { path = "../arc-pdfium-sys" }
+
+[build-dependencies]
+bindgen = "0.72"
+cc = "1.11.3"
+
+[lints]
+workspace = true
