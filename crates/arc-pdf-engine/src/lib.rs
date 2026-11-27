@@ -11,6 +11,8 @@ mod annotation;
 mod bookmark;
 mod document;
 mod error;
+mod form;
+mod layer;
 mod page;
 mod page_link;
 mod page_object;
@@ -22,6 +24,8 @@ pub use annotation::{Annotation, AnnotationSubtype};
 pub use bookmark::{Bookmark, Destination};
 pub use document::Document;
 pub use error::{EngineError, Result};
+pub use form::FormHandler;
+pub use layer::{Layer, LayerManager};
 pub use page::Page;
 pub use page_link::PageLink;
 pub use page_object::{PageObject, PdfMatrix};
@@ -124,6 +128,15 @@ mod tests {
             let _ = object.matrix();
             let _ = object.fill_color();
         }
+    }
+
+    #[test]
+    fn form_and_layer_wrappers_work() {
+        let runtime = PdfiumRuntime::init();
+        let doc = runtime.open_document(&fixture()).expect("open fixture");
+        let layers = doc.layers();
+        assert!(layers.layers.is_empty() || !layers.layers[0].name.is_empty());
+        let _ = layers.active;
     }
 
     #[test]

@@ -1,6 +1,6 @@
 //! Rust equivalent of ArcPDFKit's `Document` handle wrapper.
 
-use super::{serial, Bookmark, EngineError, Page, Result};
+use super::{serial, Bookmark, EngineError, FormHandler, LayerManager, Page, Result};
 use arc_pdf_core::{ContentGeneration, PageId};
 use arc_pdfium_sys as sys;
 use std::path::Path;
@@ -74,6 +74,20 @@ impl Document {
 
     pub fn render_page(&self, page: PageId, scale: f32) -> Result<super::Raster> {
         self.page(page)?.render_page(scale)
+    }
+
+    /// Form interaction facade. Hosts that own a form environment can attach
+    /// one handle; `FormHandler` itself never creates or destroys it.
+    pub fn form_handler(
+        &self,
+        handle: std::ptr::NonNull<sys::fpdf_form_handle_t__>,
+    ) -> FormHandler<'_> {
+        FormHandler::from_handle(handle)
+    }
+
+    /// Load annotation layers (OCGs) from this document.
+    pub fn layers(&self) -> LayerManager<'_> {
+        LayerManager::load(self)
     }
 
     /// Read the PDF outline as an owned tree of bookmark snapshots.

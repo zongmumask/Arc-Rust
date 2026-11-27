@@ -8,6 +8,7 @@ authors.workspace = true
 [dependencies]
 arc-pdf-core = { path = "../../crates/arc-pdf-core" }
 arc-pdfium-sys = { path = "../../ffi/arc-pdfium-sys" }
+arc-pdfium-ext = { path = "../../ffi/arc-pdfium-ext" }
 
 [lints]
 workspace = true

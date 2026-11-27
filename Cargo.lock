@@ -209,6 +209,7 @@ name = "arc-pdf-engine"
 version = "0.1.0"
 dependencies = [
  "arc-pdf-core",
+ "arc-pdfium-ext",
  "arc-pdfium-sys",
 ]
 
