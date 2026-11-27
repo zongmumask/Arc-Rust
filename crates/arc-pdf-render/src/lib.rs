@@ -94,14 +94,41 @@ pub struct RenderKey {
 }
 
 impl RenderKey {
-    pub fn preview(document: DocumentId, page: PageId, bucket: ScaleBucket,
-                   generation: ContentGeneration, flags: RenderFlags) -> Self {
-        Self { document, page, role: RenderRole::Preview, tile: None, bucket, generation, flags }
+    pub fn preview(
+        document: DocumentId,
+        page: PageId,
+        bucket: ScaleBucket,
+        generation: ContentGeneration,
+        flags: RenderFlags,
+    ) -> Self {
+        Self {
+            document,
+            page,
+            role: RenderRole::Preview,
+            tile: None,
+            bucket,
+            generation,
+            flags,
+        }
     }
 
-    pub fn tile(document: DocumentId, page: PageId, tile: TileCoord, bucket: ScaleBucket,
-                generation: ContentGeneration, flags: RenderFlags) -> Self {
-        Self { document, page, role: RenderRole::Tile, tile: Some(tile), bucket, generation, flags }
+    pub fn tile(
+        document: DocumentId,
+        page: PageId,
+        tile: TileCoord,
+        bucket: ScaleBucket,
+        generation: ContentGeneration,
+        flags: RenderFlags,
+    ) -> Self {
+        Self {
+            document,
+            page,
+            role: RenderRole::Tile,
+            tile: Some(tile),
+            bucket,
+            generation,
+            flags,
+        }
     }
 }
 
@@ -132,9 +159,11 @@ impl TileGrid {
     pub fn visible_tiles(page_rect: Rect, viewport: &Viewport) -> Vec<(TileCoord, Rect)> {
         let visible = viewport.visible;
         let first_col = (visible.origin.x / TILE_SIZE_PT).floor() as i32;
-        let last_col = ((visible.origin.x + visible.size.width - 1.0) / TILE_SIZE_PT).floor() as i32;
+        let last_col =
+            ((visible.origin.x + visible.size.width - 1.0) / TILE_SIZE_PT).floor() as i32;
         let first_row = (visible.origin.y / TILE_SIZE_PT).floor() as i32;
-        let last_row = ((visible.origin.y + visible.size.height - 1.0) / TILE_SIZE_PT).floor() as i32;
+        let last_row =
+            ((visible.origin.y + visible.size.height - 1.0) / TILE_SIZE_PT).floor() as i32;
 
         let mut result = Vec::new();
         for row in first_row..=last_row {
@@ -245,7 +274,12 @@ pub struct RenderCache {
 
 impl RenderCache {
     pub fn new(budget: usize) -> Self {
-        Self { budget, used: 0, clock: 0, entries: HashMap::new() }
+        Self {
+            budget,
+            used: 0,
+            clock: 0,
+            entries: HashMap::new(),
+        }
     }
 
     pub fn contains(&self, key: &RenderKey) -> bool {
@@ -257,7 +291,13 @@ impl RenderCache {
         if let Some(old) = self.entries.remove(&key) {
             self.used = self.used.saturating_sub(old.bytes);
         }
-        self.entries.insert(key, CacheEntry { bytes, last_used: self.clock });
+        self.entries.insert(
+            key,
+            CacheEntry {
+                bytes,
+                last_used: self.clock,
+            },
+        );
         self.used += bytes;
         self.evict_to_budget();
     }
@@ -283,7 +323,9 @@ impl RenderCache {
 
     fn evict_to_budget(&mut self) {
         while self.used > self.budget {
-            let oldest = self.entries.iter()
+            let oldest = self
+                .entries
+                .iter()
                 .min_by_key(|(_, entry)| entry.last_used)
                 .map(|(key, _)| *key);
             let Some(key) = oldest else { break };
@@ -330,7 +372,10 @@ mod tests {
         let tiles = TileGrid::visible_tiles(Rect::new(0.0, 0.0, 200.0, 200.0), &viewport);
         assert_eq!(tiles.len(), 4);
 
-        let size = TileGrid::pixel_size(Rect::new(0.0, 0.0, 100.0, 100.0), ScaleBucket::from_scale(2.0));
+        let size = TileGrid::pixel_size(
+            Rect::new(0.0, 0.0, 100.0, 100.0),
+            ScaleBucket::from_scale(2.0),
+        );
         assert_eq!(size.width, 200.0);
         assert_eq!(size.height, 200.0);
     }
@@ -338,8 +383,14 @@ mod tests {
     #[test]
     fn scheduler_deduplicates_and_rejects_stale() {
         let (doc, page, generation) = doc_page();
-        let key = RenderKey::tile(doc, page, TileCoord { col: 0, row: 0 },
-                                  ScaleBucket(4), generation, RenderFlags::default());
+        let key = RenderKey::tile(
+            doc,
+            page,
+            TileCoord { col: 0, row: 0 },
+            ScaleBucket(4),
+            generation,
+            RenderFlags::default(),
+        );
         let mut scheduler = RenderScheduler::new();
 
         assert_eq!(scheduler.request(key), SchedulerDecision::Submit);
@@ -353,8 +404,20 @@ mod tests {
     #[test]
     fn generation_change_drops_old_requests() {
         let (doc, page, generation) = doc_page();
-        let old_key = RenderKey::preview(doc, page, ScaleBucket(4), generation, RenderFlags::default());
-        let new_key = RenderKey::preview(doc, page, ScaleBucket(4), generation.next(), RenderFlags::default());
+        let old_key = RenderKey::preview(
+            doc,
+            page,
+            ScaleBucket(4),
+            generation,
+            RenderFlags::default(),
+        );
+        let new_key = RenderKey::preview(
+            doc,
+            page,
+            ScaleBucket(4),
+            generation.next(),
+            RenderFlags::default(),
+        );
         let mut scheduler = RenderScheduler::new();
 
         assert_eq!(scheduler.request(old_key), SchedulerDecision::Submit);
@@ -369,8 +432,17 @@ mod tests {
     fn cache_evicts_lru_by_bytes() {
         let (doc, page, generation) = doc_page();
         let mut cache = RenderCache::new(100);
-        let a = RenderKey::preview(doc, page, ScaleBucket(4), generation, RenderFlags::default());
-        let flags = RenderFlags { night: true, ..Default::default() };
+        let a = RenderKey::preview(
+            doc,
+            page,
+            ScaleBucket(4),
+            generation,
+            RenderFlags::default(),
+        );
+        let flags = RenderFlags {
+            night: true,
+            ..Default::default()
+        };
         let b = RenderKey::preview(doc, page, ScaleBucket(4), generation, flags);
 
         cache.insert(a, 60);

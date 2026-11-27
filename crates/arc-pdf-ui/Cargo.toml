@@ -11,5 +11,10 @@ arc-pdf-core = { path = "../../crates/arc-pdf-core" }
 arc-pdf-engine = { path = "../../crates/arc-pdf-engine" }
 image = { version = "0.25", default-features = false, features = ["png"] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "=0.5.3"
+objc2-foundation = { version = "0.2.2", features = ["NSGeometry"] }
+raw-window-handle = "0.6.2"
+
 [lints]
 workspace = true

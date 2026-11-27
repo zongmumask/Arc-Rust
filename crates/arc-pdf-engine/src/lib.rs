@@ -33,8 +33,8 @@ impl PdfiumRuntime {
     }
 
     pub fn open_document(&self, path: &Path) -> Result<Document, EngineError> {
-        let bytes = std::fs::read(path)
-            .map_err(|e| EngineError(format!("read PDF failed: {e}")))?;
+        let bytes =
+            std::fs::read(path).map_err(|e| EngineError(format!("read PDF failed: {e}")))?;
         let handle = unsafe {
             sys::FPDF_LoadMemDocument(
                 bytes.as_ptr() as *const std::os::raw::c_void,
@@ -120,11 +120,13 @@ impl Document {
             );
         }
 
-        let page_handle = unsafe {
-            sys::FPDF_LoadPage(self.handle.as_ptr(), page.0 as std::os::raw::c_int)
-        };
+        let page_handle =
+            unsafe { sys::FPDF_LoadPage(self.handle.as_ptr(), page.0 as std::os::raw::c_int) };
         if page_handle.is_null() {
-            return Err(EngineError(format!("FPDF_LoadPage failed for page {}", page.0)));
+            return Err(EngineError(format!(
+                "FPDF_LoadPage failed for page {}",
+                page.0
+            )));
         }
         let _page_guard = PageGuard(page_handle);
 

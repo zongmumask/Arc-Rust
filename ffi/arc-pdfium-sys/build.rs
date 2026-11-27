@@ -6,7 +6,10 @@ fn main() {
     let repo_root = manifest_dir.parent().unwrap().parent().unwrap();
 
     println!("cargo:rerun-if-env-changed=ARCPDF_PDFIUM_TARGET");
-    println!("cargo:rerun-if-changed={}", repo_root.join("pdfium/pdfium-revision.toml").display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        repo_root.join("pdfium/pdfium-revision.toml").display()
+    );
 
     let target = env::var("ARCPDF_PDFIUM_TARGET").unwrap_or_else(|_| "macos_arm64".to_string());
     let artifact_dir = repo_root.join("artifacts/pdfium").join(&target);
@@ -44,5 +47,7 @@ fn main() {
         .expect("failed to generate PDFium bindings");
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs");
-    bindings.write_to_file(out_path).expect("failed to write bindings");
+    bindings
+        .write_to_file(out_path)
+        .expect("failed to write bindings");
 }

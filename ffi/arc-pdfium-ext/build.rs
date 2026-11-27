@@ -10,7 +10,12 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 fn repo_root(manifest_dir: &Path) -> PathBuf {
-    manifest_dir.parent().unwrap().parent().unwrap().to_path_buf()
+    manifest_dir
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_path_buf()
 }
 
 fn main() {
@@ -25,7 +30,10 @@ fn main() {
     let harfbuzz_src = pdfium_dir.join("third_party/harfbuzz/src/src");
 
     println!("cargo:rerun-if-env-changed=ARCPDF_PDFIUM_TARGET");
-    println!("cargo:rerun-if-changed={}", pdfium_dir.join(".git/HEAD").display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        pdfium_dir.join(".git/HEAD").display()
+    );
     for path in [&cpp_dir, &include_dir, &artifact_dir.join("manifest.json")] {
         println!("cargo:rerun-if-changed={}", path.display());
     }
@@ -95,7 +103,9 @@ fn main() {
     for header in headers {
         builder = builder.header(header.to_string_lossy());
     }
-    let bindings = builder.generate().expect("failed to generate extension bindings");
+    let bindings = builder
+        .generate()
+        .expect("failed to generate extension bindings");
     bindings
         .write_to_file(PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs"))
         .expect("failed to write extension bindings");

@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
-    let command = args.next().ok_or("usage: arc-pdf-cli render --pdf <path> --page <n> --scale <s> --out <path>")?;
+    let command = args
+        .next()
+        .ok_or("usage: arc-pdf-cli render --pdf <path> --page <n> --scale <s> --out <path>")?;
     if command != "render" {
         return Err(format!("unknown command: {command}").into());
     }
@@ -42,7 +44,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     println!(
         "rendered page {} at scale {} -> {} ({}x{})",
-        page, scale, out.display(), raster.width, raster.height
+        page,
+        scale,
+        out.display(),
+        raster.width,
+        raster.height
     );
     Ok(())
 }
