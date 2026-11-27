@@ -218,6 +218,7 @@ name = "arc-pdf-render"
 version = "0.1.0"
 dependencies = [
  "arc-pdf-core",
+ "image",
 ]
 
 [[package]]

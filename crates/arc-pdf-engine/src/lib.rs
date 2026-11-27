@@ -13,11 +13,13 @@ mod document;
 mod error;
 mod form;
 mod layer;
+mod ocr;
 mod page;
 mod page_link;
 mod page_object;
 mod serial;
 mod text;
+mod watermark;
 mod wide;
 
 pub use annotation::{Annotation, AnnotationSubtype};
@@ -26,10 +28,12 @@ pub use document::Document;
 pub use error::{EngineError, Result};
 pub use form::FormHandler;
 pub use layer::{Layer, LayerManager};
+pub use ocr::{OcrRecognizer, OcrText, OcrTextBox, OcrTextSourceKind};
 pub use page::Page;
 pub use page_link::PageLink;
 pub use page_object::{PageObject, PdfMatrix};
 pub use text::TextPage;
+pub use watermark::{add_text_watermark, remove_watermarks, watermarks, WatermarkInfo};
 
 static INIT: Once = Once::new();
 

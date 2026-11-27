@@ -32,6 +32,10 @@ impl<'doc> Page<'doc> {
         self.id
     }
 
+    pub(crate) fn document_handle(&self) -> sys::FPDF_DOCUMENT {
+        self._doc.handle.as_ptr()
+    }
+
     /// Render the whole page into a fresh RGBA raster at `scale`.
     pub fn render_page(&self, scale: f32) -> Result<Raster> {
         let (width_pt, height_pt) = self._doc.page_size(self.id)?;

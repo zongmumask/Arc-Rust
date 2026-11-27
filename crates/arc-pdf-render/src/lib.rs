@@ -4,8 +4,11 @@
 //! keys, cancellation and cache budgets. It does not call PDFium and does not
 //! create GPU resources.
 
+mod webp;
+
 use arc_pdf_core::{ContentGeneration, DocumentId, PageId, Rect, Size};
 use std::collections::HashMap;
+pub use webp::{decode_rgba, encode_rgba};
 
 pub const TILE_SIZE_PT: f32 = 128.0;
 pub const PREFETCH_VERTICAL_FACTOR: f32 = 0.8;
