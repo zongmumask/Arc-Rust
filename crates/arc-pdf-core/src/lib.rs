@@ -4,6 +4,15 @@
 //! shared by the engine, render scheduler and UI layers. It must remain
 //! platform-independent and easy to test without a window.
 
+mod page_label;
+mod watermark;
+
+pub use page_label::{PageLabelRange, PageLabelStyle};
+pub use watermark::{
+    WatermarkColor, WatermarkContentType, WatermarkDefinition, WatermarkFont, WatermarkLayout,
+    WatermarkSourceKind,
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DocumentId(pub u64);
 

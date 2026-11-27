@@ -1,6 +1,6 @@
 //! Rust equivalent of ArcPDFKit's `Document` handle wrapper.
 
-use super::{EngineError, Page, Result};
+use super::{serial, Bookmark, EngineError, Page, Result};
 use arc_pdf_core::{ContentGeneration, PageId};
 use arc_pdfium_sys as sys;
 use std::path::Path;
@@ -21,13 +21,13 @@ pub struct Document {
 pub(crate) fn open(path: &Path) -> Result<Document> {
     let bytes =
         std::fs::read(path).map_err(|e| EngineError::new(format!("read PDF failed: {e}")))?;
-    let handle = unsafe {
+    let handle = serial::with_pdfium(|| unsafe {
         sys::FPDF_LoadMemDocument(
             bytes.as_ptr() as *const std::os::raw::c_void,
             bytes.len() as std::os::raw::c_int,
             std::ptr::null(),
         )
-    };
+    });
     let handle =
         NonNull::new(handle).ok_or_else(|| EngineError::new("FPDF_LoadMemDocument failed"))?;
     Ok(Document {
@@ -44,20 +44,20 @@ impl Document {
     }
 
     pub fn page_count(&self) -> usize {
-        unsafe { sys::FPDF_GetPageCount(self.handle.as_ptr()) as usize }
+        serial::with_pdfium(|| unsafe { sys::FPDF_GetPageCount(self.handle.as_ptr()) as usize })
     }
 
     pub fn page_size(&self, page: PageId) -> Result<(f32, f32)> {
         let mut width = 0.0f64;
         let mut height = 0.0f64;
-        let ok = unsafe {
+        let ok = serial::with_pdfium(|| unsafe {
             sys::FPDF_GetPageSizeByIndex(
                 self.handle.as_ptr(),
                 page.0 as std::os::raw::c_int,
                 &mut width,
                 &mut height,
             )
-        };
+        });
         if ok == 0 {
             return Err(EngineError::new(format!(
                 "page size failed for page {}",
@@ -75,10 +75,15 @@ impl Document {
     pub fn render_page(&self, page: PageId, scale: f32) -> Result<super::Raster> {
         self.page(page)?.render_page(scale)
     }
+
+    /// Read the PDF outline as an owned tree of bookmark snapshots.
+    pub fn bookmarks(&self) -> Vec<Bookmark> {
+        Bookmark::tree(self)
+    }
 }
 
 impl Drop for Document {
     fn drop(&mut self) {
-        unsafe { sys::FPDF_CloseDocument(self.handle.as_ptr()) }
+        serial::with_pdfium(|| unsafe { sys::FPDF_CloseDocument(self.handle.as_ptr()) })
     }
 }

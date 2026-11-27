@@ -199,6 +199,10 @@ dependencies = [
 [[package]]
 name = "arc-pdf-core"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "arc-pdf-engine"

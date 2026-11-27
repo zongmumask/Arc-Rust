@@ -1,6 +1,6 @@
 //! Rust equivalent of ArcPDFKit's `Page` handle wrapper.
 
-use super::BitmapGuard;
+use super::{serial, BitmapGuard};
 use super::{Document, TextPage};
 use super::{EngineError, Raster, Result};
 use arc_pdf_core::PageId;
@@ -16,8 +16,9 @@ pub struct Page<'doc> {
 
 impl<'doc> Page<'doc> {
     pub(crate) fn load(document: &'doc Document, id: PageId) -> Result<Self> {
-        let handle =
-            unsafe { sys::FPDF_LoadPage(document.handle.as_ptr(), id.0 as std::os::raw::c_int) };
+        let handle = serial::with_pdfium(|| unsafe {
+            sys::FPDF_LoadPage(document.handle.as_ptr(), id.0 as std::os::raw::c_int)
+        });
         let handle = NonNull::new(handle)
             .ok_or_else(|| EngineError::new(format!("FPDF_LoadPage failed for page {}", id.0)))?;
         Ok(Self {
@@ -42,7 +43,7 @@ impl<'doc> Page<'doc> {
 
         let mut pixels = vec![0u8; width * height * 4];
         let stride = (width * 4) as std::os::raw::c_int;
-        let bitmap = unsafe {
+        let bitmap = serial::with_pdfium(|| unsafe {
             sys::FPDFBitmap_CreateEx(
                 width as std::os::raw::c_int,
                 height as std::os::raw::c_int,
@@ -50,13 +51,13 @@ impl<'doc> Page<'doc> {
                 pixels.as_mut_ptr() as *mut std::os::raw::c_void,
                 stride,
             )
-        };
+        });
         if bitmap.is_null() {
             return Err(EngineError::new("FPDFBitmap_CreateEx failed"));
         }
         let _bitmap_guard = BitmapGuard(bitmap);
 
-        unsafe {
+        serial::with_pdfium(|| unsafe {
             sys::FPDFBitmap_FillRect(
                 bitmap,
                 0,
@@ -65,7 +66,7 @@ impl<'doc> Page<'doc> {
                 height as std::os::raw::c_int,
                 0xFFFFFFFF,
             );
-        }
+        });
         let matrix = sys::FS_MATRIX {
             a: scale,
             b: 0.0,
@@ -80,7 +81,7 @@ impl<'doc> Page<'doc> {
             right: width as f32,
             bottom: height as f32,
         };
-        unsafe {
+        serial::with_pdfium(|| unsafe {
             sys::FPDF_RenderPageBitmapWithMatrix(
                 bitmap,
                 self.handle.as_ptr(),
@@ -88,7 +89,7 @@ impl<'doc> Page<'doc> {
                 &clip,
                 sys::FPDF_REVERSE_BYTE_ORDER as std::os::raw::c_int,
             );
-        }
+        });
         for chunk in pixels.as_chunks_mut::<4>().0 {
             chunk.swap(0, 2);
         }
@@ -108,6 +109,6 @@ impl<'doc> Page<'doc> {
 
 impl Drop for Page<'_> {
     fn drop(&mut self) {
-        unsafe { sys::FPDF_ClosePage(self.handle.as_ptr()) }
+        serial::with_pdfium(|| unsafe { sys::FPDF_ClosePage(self.handle.as_ptr()) })
     }
 }

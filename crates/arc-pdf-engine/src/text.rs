@@ -1,7 +1,7 @@
 //! Rust equivalent of ArcPDFKit's `TextPage` handle wrapper.
 
-use super::wide;
 use super::Page;
+use super::{serial, wide};
 use super::{EngineError, Result};
 use arc_pdf_core::Rect;
 use arc_pdfium_sys as sys;
@@ -9,13 +9,14 @@ use std::ptr::NonNull;
 
 /// Owning `FPDF_TEXTPAGE` handle, tied to the borrowed `Page`.
 pub struct TextPage<'page> {
-    handle: NonNull<sys::fpdf_textpage_t__>,
+    pub(crate) handle: NonNull<sys::fpdf_textpage_t__>,
     _page: &'page Page<'page>,
 }
 
 impl<'page> TextPage<'page> {
     pub(crate) fn load(page: &'page Page<'page>) -> Result<Self> {
-        let handle = unsafe { sys::FPDFText_LoadPage(page.handle.as_ptr()) };
+        let handle =
+            serial::with_pdfium(|| unsafe { sys::FPDFText_LoadPage(page.handle.as_ptr()) });
         let handle =
             NonNull::new(handle).ok_or_else(|| EngineError::new("FPDFText_LoadPage failed"))?;
         Ok(Self {
@@ -25,25 +26,28 @@ impl<'page> TextPage<'page> {
     }
 
     pub fn char_count(&self) -> usize {
-        let count = unsafe { sys::FPDFText_CountChars(self.handle.as_ptr()) };
+        let count =
+            serial::with_pdfium(|| unsafe { sys::FPDFText_CountChars(self.handle.as_ptr()) });
         count.max(0) as usize
     }
 
     pub fn unicode_at(&self, index: usize) -> Option<char> {
-        let raw = unsafe { sys::FPDFText_GetUnicode(self.handle.as_ptr(), index as i32) };
+        let raw = serial::with_pdfium(|| unsafe {
+            sys::FPDFText_GetUnicode(self.handle.as_ptr(), index as i32)
+        });
         char::from_u32(raw)
     }
 
     pub fn text(&self, start: usize, count: usize) -> Result<String> {
         let mut units = vec![0u16; count];
-        let written = unsafe {
+        let written = serial::with_pdfium(|| unsafe {
             sys::FPDFText_GetText(
                 self.handle.as_ptr(),
                 start as i32,
                 count as i32,
                 units.as_mut_ptr(),
             )
-        };
+        });
         if written == 0 {
             return Ok(String::new());
         }
@@ -57,7 +61,7 @@ impl<'page> TextPage<'page> {
         let mut top = 0.0f64;
         let mut right = 0.0f64;
         let mut bottom = 0.0f64;
-        let ok = unsafe {
+        let ok = serial::with_pdfium(|| unsafe {
             sys::FPDFText_GetCharBox(
                 self.handle.as_ptr(),
                 index as i32,
@@ -66,7 +70,7 @@ impl<'page> TextPage<'page> {
                 &mut top,
                 &mut bottom,
             )
-        };
+        });
         if ok == 0 {
             return None;
         }
@@ -79,8 +83,9 @@ impl<'page> TextPage<'page> {
     }
 
     pub fn rect_count(&self, start: usize, count: usize) -> usize {
-        let n =
-            unsafe { sys::FPDFText_CountRects(self.handle.as_ptr(), start as i32, count as i32) };
+        let n = serial::with_pdfium(|| unsafe {
+            sys::FPDFText_CountRects(self.handle.as_ptr(), start as i32, count as i32)
+        });
         n.max(0) as usize
     }
 
@@ -89,7 +94,7 @@ impl<'page> TextPage<'page> {
         let mut top = 0.0f64;
         let mut right = 0.0f64;
         let mut bottom = 0.0f64;
-        let ok = unsafe {
+        let ok = serial::with_pdfium(|| unsafe {
             sys::FPDFText_GetRect(
                 self.handle.as_ptr(),
                 index as i32,
@@ -98,7 +103,7 @@ impl<'page> TextPage<'page> {
                 &mut right,
                 &mut bottom,
             )
-        };
+        });
         if ok == 0 {
             return None;
         }
@@ -112,21 +117,23 @@ impl<'page> TextPage<'page> {
 
     pub fn find(&self, needle: &str) -> Vec<super::TextMatch> {
         let pattern = wide::to_pdfium(needle);
-        let handle = unsafe {
+        let handle = serial::with_pdfium(|| unsafe {
             sys::FPDFText_FindStart(
                 self.handle.as_ptr(),
                 pattern.as_ptr(),
                 sys::FPDF_MATCHCASE as std::os::raw::c_ulong,
                 0,
             )
-        };
+        });
         if handle.is_null() {
             return Vec::new();
         }
         let mut matches = Vec::new();
-        while unsafe { sys::FPDFText_FindNext(handle) } != 0 {
-            let start = unsafe { sys::FPDFText_GetSchResultIndex(handle) }.max(0) as usize;
-            let count = unsafe { sys::FPDFText_GetSchCount(handle) }.max(0) as usize;
+        while serial::with_pdfium(|| unsafe { sys::FPDFText_FindNext(handle) }) != 0 {
+            let start = serial::with_pdfium(|| unsafe { sys::FPDFText_GetSchResultIndex(handle) })
+                .max(0) as usize;
+            let count = serial::with_pdfium(|| unsafe { sys::FPDFText_GetSchCount(handle) }).max(0)
+                as usize;
             let mut rect = Rect::default();
             for i in 0..self.rect_count(start, count) {
                 if let Some(r) = self.rect_at(i) {
@@ -146,13 +153,20 @@ impl<'page> TextPage<'page> {
             }
             matches.push(super::TextMatch { start, count, rect });
         }
-        unsafe { sys::FPDFText_FindClose(handle) };
+        serial::with_pdfium(|| unsafe { sys::FPDFText_FindClose(handle) });
         matches
+    }
+}
+
+impl TextPage<'_> {
+    /// Web links (annotations) found on the text page.
+    pub fn page_link(&self) -> Result<super::PageLink> {
+        super::PageLink::load_under(self)
     }
 }
 
 impl Drop for TextPage<'_> {
     fn drop(&mut self) {
-        unsafe { sys::FPDFText_ClosePage(self.handle.as_ptr()) }
+        serial::with_pdfium(|| unsafe { sys::FPDFText_ClosePage(self.handle.as_ptr()) })
     }
 }

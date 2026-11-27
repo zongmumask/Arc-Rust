@@ -7,15 +7,20 @@ use arc_pdfium_sys as sys;
 use std::path::Path;
 use std::sync::Once;
 
+mod bookmark;
 mod document;
 mod error;
 mod page;
+mod page_link;
+mod serial;
 mod text;
 mod wide;
 
+pub use bookmark::{Bookmark, Destination};
 pub use document::Document;
 pub use error::{EngineError, Result};
 pub use page::Page;
+pub use page_link::PageLink;
 pub use text::TextPage;
 
 static INIT: Once = Once::new();
@@ -25,14 +30,16 @@ pub struct PdfiumRuntime;
 
 impl PdfiumRuntime {
     pub fn init() -> Self {
-        INIT.call_once(|| unsafe {
-            sys::FPDF_InitLibrary();
+        INIT.call_once(|| {
+            serial::with_pdfium(|| unsafe {
+                sys::FPDF_InitLibrary();
+            });
         });
         Self
     }
 
     pub fn open_document(&self, path: &Path) -> Result<Document> {
-        document::open(path)
+        serial::with_pdfium(|| document::open(path))
     }
 }
 
@@ -54,7 +61,7 @@ pub struct Raster {
 struct BitmapGuard(sys::FPDF_BITMAP);
 impl Drop for BitmapGuard {
     fn drop(&mut self) {
-        unsafe { sys::FPDFBitmap_Destroy(self.0) }
+        serial::with_pdfium(|| unsafe { sys::FPDFBitmap_Destroy(self.0) })
     }
 }
 
@@ -80,6 +87,19 @@ mod tests {
             .text(0, text.char_count().min(32))
             .expect("extract text");
         assert!(!first.trim().is_empty(), "first chars should not be blank");
+    }
+
+    #[test]
+    fn navigation_wrappers_work() {
+        let runtime = PdfiumRuntime::init();
+        let doc = runtime.open_document(&fixture()).expect("open fixture");
+        // The smoke fixture has no outline; reading an empty tree must be safe.
+        let bookmarks = doc.bookmarks();
+        assert!(bookmarks.is_empty() || !bookmarks[0].title.is_empty());
+        let page = doc.page(PageId(0)).expect("load page");
+        let text = page.text_page().expect("load text page");
+        let links = text.page_link().expect("load web links");
+        let _ = links.count_web_links();
     }
 
     #[test]
