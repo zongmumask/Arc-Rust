@@ -7,20 +7,24 @@ use arc_pdfium_sys as sys;
 use std::path::Path;
 use std::sync::Once;
 
+mod annotation;
 mod bookmark;
 mod document;
 mod error;
 mod page;
 mod page_link;
+mod page_object;
 mod serial;
 mod text;
 mod wide;
 
+pub use annotation::{Annotation, AnnotationSubtype};
 pub use bookmark::{Bookmark, Destination};
 pub use document::Document;
 pub use error::{EngineError, Result};
 pub use page::Page;
 pub use page_link::PageLink;
+pub use page_object::{PageObject, PdfMatrix};
 pub use text::TextPage;
 
 static INIT: Once = Once::new();
@@ -100,6 +104,26 @@ mod tests {
         let text = page.text_page().expect("load text page");
         let links = text.page_link().expect("load web links");
         let _ = links.count_web_links();
+    }
+
+    #[test]
+    fn annotation_and_object_readers_work() {
+        let runtime = PdfiumRuntime::init();
+        let doc = runtime.open_document(&fixture()).expect("open fixture");
+        let page = doc.page(PageId(0)).expect("load page");
+        let annotations = page.annotations();
+        for annot in &annotations {
+            let _ = annot.string_value("Contents");
+            let _ = annot.color(0);
+            let _ = annot.quad_count();
+        }
+        let objects = page.objects();
+        for object in &objects {
+            let _ = object.object_type();
+            let _ = object.bounds();
+            let _ = object.matrix();
+            let _ = object.fill_color();
+        }
     }
 
     #[test]

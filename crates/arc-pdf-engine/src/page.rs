@@ -101,6 +101,35 @@ impl<'doc> Page<'doc> {
         })
     }
 
+    /// Read annotations as owned snapshots (matching ArcPDFKit's cached view).
+    pub fn annotations(&self) -> Vec<super::Annotation<'_>> {
+        super::serial::with_pdfium(|| {
+            let count =
+                unsafe { sys::FPDFPage_GetAnnotCount(self.handle.as_ptr()) }.max(0) as usize;
+            (0..count)
+                .filter_map(|index| {
+                    let handle =
+                        unsafe { sys::FPDFPage_GetAnnot(self.handle.as_ptr(), index as i32) };
+                    std::ptr::NonNull::new(handle).map(super::Annotation::load)
+                })
+                .collect()
+        })
+    }
+
+    /// Borrowed views of all page objects.
+    pub fn objects(&self) -> Vec<super::PageObject<'_>> {
+        super::serial::with_pdfium(|| {
+            let count = unsafe { sys::FPDFPage_CountObjects(self.handle.as_ptr()) }.max(0) as usize;
+            (0..count)
+                .filter_map(|index| {
+                    let handle =
+                        unsafe { sys::FPDFPage_GetObject(self.handle.as_ptr(), index as i32) };
+                    std::ptr::NonNull::new(handle).map(super::PageObject::load)
+                })
+                .collect()
+        })
+    }
+
     /// Lazily create a text page for this page, mirroring `Page.textPage`.
     pub fn text_page(&self) -> Result<TextPage<'_>> {
         TextPage::load(self)
