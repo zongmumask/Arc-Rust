@@ -33,9 +33,45 @@ fn main() {
     println!("cargo:rustc-link-lib=framework=Foundation");
     println!("cargo:rustc-link-lib=framework=AppKit");
 
-    let header = include_dir.join("fpdfview.h");
+    // ArcPDFKit consumes the whole public PDFium C surface through the
+    // ArcPDFium module. Bind the exported headers together so the Rust
+    // kernel wrappers have the same API surface (text, doc, annotations,
+    // forms, bookmark/link traversal, ...).
+    for header in [
+        "fpdfview.h",
+        "fpdf_text.h",
+        "fpdf_doc.h",
+        "fpdf_annot.h",
+        "fpdf_edit.h",
+        "fpdf_formfill.h",
+        "fpdf_searchex.h",
+        "fpdf_ppo.h",
+        "fpdf_catalog.h",
+    ] {
+        println!(
+            "cargo:rerun-if-changed={}",
+            include_dir.join(header).display()
+        );
+    }
+
     let bindings = bindgen::Builder::default()
-        .header(header.to_string_lossy())
+        .header(include_dir.join("fpdfview.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_text.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_doc.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_annot.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_edit.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_formfill.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_searchex.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_ppo.h").to_string_lossy())
+        .clang_arg("-include")
+        .clang_arg(include_dir.join("fpdf_catalog.h").to_string_lossy())
         .clang_arg(format!("-I{}", include_dir.display()))
         .allowlist_function("FPDF.*")
         .allowlist_type("FPDF.*")
