@@ -9,6 +9,7 @@ authors.workspace = true
 gpui = { path = "../../vendor/zed/crates/gpui" }
 gpui_platform = { path = "../../vendor/zed/crates/gpui_platform", features = ["font-kit", "wayland", "x11"] }
 arc-pdf-ui = { path = "../arc-pdf-ui" }
+arc-pdf-log = { path = "../arc-pdf-log" }
 
 [lints]
 workspace = true

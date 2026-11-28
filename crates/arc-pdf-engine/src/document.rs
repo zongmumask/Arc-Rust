@@ -76,6 +76,25 @@ impl Document {
         self.page(page)?.render_page(scale)
     }
 
+    /// Render a page-space rectangle. `guard` is evaluated twice inside the
+    /// engine, the second time immediately before FPDF_RenderPageBitmapWithMatrix.
+    pub fn render_region(
+        &self,
+        page: PageId,
+        rect: arc_pdf_core::Rect,
+        scale: f32,
+        guard: &dyn Fn() -> bool,
+    ) -> Result<Option<super::Raster>> {
+        self.page(page)?.render_region(
+            rect.origin.x,
+            rect.origin.y,
+            rect.size.width,
+            rect.size.height,
+            scale,
+            guard,
+        )
+    }
+
     /// Form interaction facade. Hosts that own a form environment can attach
     /// one handle; `FormHandler` itself never creates or destroys it.
     pub fn form_handler(

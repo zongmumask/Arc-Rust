@@ -1,0 +1,18 @@
+[package]
+name = "arc-pdf-view"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+arc-pdf-core = { path = "../arc-pdf-core" }
+arc-pdf-log = { path = "../arc-pdf-log" }
+arc-pdf-engine = { path = "../arc-pdf-engine" }
+arc-pdf-render = { path = "../arc-pdf-render" }
+arc-pdf-viewer = { path = "../arc-pdf-viewer" }
+gpui = { path = "../../vendor/zed/crates/gpui" }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[lints]
+workspace = true

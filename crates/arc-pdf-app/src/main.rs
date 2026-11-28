@@ -3,6 +3,7 @@ use gpui::*;
 use std::path::PathBuf;
 
 fn main() {
+    arc_pdf_log::init();
     let app = gpui_platform::application();
     let initial_pdf = std::env::args().nth(1).map(PathBuf::from).filter(|path| {
         path.extension()

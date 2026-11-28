@@ -144,6 +144,26 @@ mod tests {
     }
 
     #[test]
+    fn render_region_respects_guard_and_clip() {
+        let runtime = PdfiumRuntime::init();
+        let doc = runtime.open_document(&fixture()).expect("open fixture");
+        let (width_pt, height_pt) = doc.page_size(PageId(0)).expect("page size");
+        let region = arc_pdf_core::Rect::new(0.0, 0.0, width_pt / 2.0, height_pt / 2.0);
+        let full = doc.render_page(PageId(0), 1.0).expect("full page");
+        let tile = doc
+            .render_region(PageId(0), region, 1.0, &|| true)
+            .expect("region render")
+            .expect("not skipped");
+        assert!(tile.width < full.width);
+        assert!(tile.height < full.height);
+        assert_eq!(tile.pixels.len(), tile.width * tile.height * 4);
+        let skipped = doc
+            .render_region(PageId(0), region, 1.0, &|| false)
+            .expect("guarded render");
+        assert!(skipped.is_none());
+    }
+
+    #[test]
     fn render_page_still_works_after_refactor() {
         let runtime = PdfiumRuntime::init();
         let doc = runtime.open_document(&fixture()).expect("open fixture");

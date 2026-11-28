@@ -9,6 +9,8 @@ authors.workspace = true
 gpui = { path = "../../vendor/zed/crates/gpui" }
 arc-pdf-core = { path = "../../crates/arc-pdf-core" }
 arc-pdf-engine = { path = "../../crates/arc-pdf-engine" }
+arc-pdf-viewer = { path = "../arc-pdf-viewer" }
+arc-pdf-view = { path = "../arc-pdf-view" }
 image = { version = "0.25", default-features = false, features = ["png"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]

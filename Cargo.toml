@@ -1,9 +1,12 @@
 [workspace]
 members = [
     "crates/arc-pdf-core",
+    "crates/arc-pdf-log",
     "crates/arc-pdf-render",
     "crates/arc-pdf-engine",
     "crates/arc-pdf-ui",
+    "crates/arc-pdf-view",
+    "crates/arc-pdf-viewer",
     "crates/arc-pdf-app",
     "crates/arc-pdf-cli",
     "ffi/arc-pdfium-sys",

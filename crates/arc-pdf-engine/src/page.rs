@@ -39,6 +39,29 @@ impl<'doc> Page<'doc> {
     /// Render the whole page into a fresh RGBA raster at `scale`.
     pub fn render_page(&self, scale: f32) -> Result<Raster> {
         let (width_pt, height_pt) = self._doc.page_size(self.id)?;
+        self.render_region(0.0, 0.0, width_pt, height_pt, scale, &|| true)?
+            .ok_or_else(|| EngineError::new("render guard rejected whole-page render"))
+    }
+
+    /// Render one page-space rectangle into a fresh RGBA raster.
+    ///
+    /// `guard` is checked immediately before the FPDF render call, while the
+    /// serial PDFium boundary is held. Fast scrolling can enqueue many tiles
+    /// that are already outside the viewport by the time they reach the head
+    /// of the queue; the guard lets callers drop that work before it reaches
+    /// PDFium. Returning `false` produces `Ok(None)`.
+    pub fn render_region(
+        &self,
+        x_pt: f32,
+        y_pt: f32,
+        width_pt: f32,
+        height_pt: f32,
+        scale: f32,
+        guard: &dyn Fn() -> bool,
+    ) -> Result<Option<Raster>> {
+        if !guard() {
+            return Ok(None);
+        }
         let width = (width_pt * scale).ceil() as usize;
         let height = (height_pt * scale).ceil() as usize;
         if width == 0 || height == 0 {
@@ -76,8 +99,8 @@ impl<'doc> Page<'doc> {
             b: 0.0,
             c: 0.0,
             d: scale,
-            e: 0.0,
-            f: 0.0,
+            e: -x_pt * scale,
+            f: -y_pt * scale,
         };
         let clip = sys::FS_RECTF {
             left: 0.0,
@@ -85,6 +108,9 @@ impl<'doc> Page<'doc> {
             right: width as f32,
             bottom: height as f32,
         };
+        if !guard() {
+            return Ok(None);
+        }
         serial::with_pdfium(|| unsafe {
             sys::FPDF_RenderPageBitmapWithMatrix(
                 bitmap,
@@ -97,12 +123,12 @@ impl<'doc> Page<'doc> {
         for chunk in pixels.as_chunks_mut::<4>().0 {
             chunk.swap(0, 2);
         }
-        Ok(Raster {
+        Ok(Some(Raster {
             width,
             height,
             stride,
             pixels,
-        })
+        }))
     }
 
     /// Read annotations as owned snapshots (matching ArcPDFKit's cached view).

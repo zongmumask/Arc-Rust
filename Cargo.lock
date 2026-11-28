@@ -182,6 +182,7 @@ checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
 name = "arc-pdf-app"
 version = "0.1.0"
 dependencies = [
+ "arc-pdf-log",
  "arc-pdf-ui",
  "gpui",
  "gpui_platform",
@@ -214,6 +215,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "arc-pdf-log"
+version = "0.1.0"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "arc-pdf-render"
 version = "0.1.0"
 dependencies = [
@@ -227,11 +235,39 @@ version = "0.1.0"
 dependencies = [
  "arc-pdf-core",
  "arc-pdf-engine",
+ "arc-pdf-view",
+ "arc-pdf-viewer",
  "gpui",
  "image",
  "objc2 0.5.3",
  "objc2-foundation 0.2.2",
  "raw-window-handle",
+]
+
+[[package]]
+name = "arc-pdf-view"
+version = "0.1.0"
+dependencies = [
+ "arc-pdf-core",
+ "arc-pdf-engine",
+ "arc-pdf-log",
+ "arc-pdf-render",
+ "arc-pdf-viewer",
+ "gpui",
+ "image",
+]
+
+[[package]]
+name = "arc-pdf-viewer"
+version = "0.1.0"
+dependencies = [
+ "arc-pdf-core",
+ "arc-pdf-engine",
+ "arc-pdf-log",
+ "arc-pdf-render",
+ "futures",
+ "gpui",
+ "image",
 ]
 
 [[package]]

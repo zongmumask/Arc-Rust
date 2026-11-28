@@ -4,5 +4,7 @@
     ],
     "rust-analyzer.check.command": "clippy",
     "rust-analyzer.cargo.features": "all",
-    "lldb.library": "/Users/danielhu/.trae-cn/extensions/vadimcn.vscode-lldb-1.12.3/lldb/lib/liblldb.dylib"
+    "lldb.adapterEnv": {
+        "PATH": "${env:HOME}/.cargo/bin:${env:PATH}"
+    }
 }
